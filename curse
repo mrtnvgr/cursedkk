@@ -1,0 +1,44 @@
+#!/bin/python
+import subprocess, evdev, argparse, json
+
+version = "0.0.1"
+parser = argparse.ArgumentParser(description='github.com/mrtnvgr/cursedkk')
+parser.add_argument('-c','--config', help='configuration')
+parser.add_argument('-d','--device', help='input device')
+parser.add_argument('-ds','--devices', action='store_true', help='show input devices')
+parser.add_argument('-vv', '--verbose', action='store_true', help='debug outputs')
+parser.add_argument('-v','--version', action='store_true', help='show version')
+args = parser.parse_args()
+if args.version==True:
+    print(f"cursedKk {version}")
+if args.devices==True:
+    devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+    print("Input devices:")
+    for device in devices:
+        print(device.path, device.name)
+if args.device!=None and args.config!=None:
+    keys = {}
+    config = json.load(open(args.config))
+    device = evdev.InputDevice("/dev/input/event"+args.device)
+    for event in device.read_loop():
+        if event.type == evdev.ecodes.EV_KEY:
+            key = evdev.categorize(event)
+            if key.keystate!=0:
+                keys[key.keycode] = key.keystate
+            elif key.keystate<1 and key.keycode in keys.keys():
+                keys.pop(key.keycode)
+        if keys!={}:
+            currentkeys = ';'.join(keys).replace("KEY_","")
+            for binding in config:
+                if args.verbose: print(binding+"?"+currentkeys)
+                if binding[:3]=="[0]":
+                    bb=binding[3:]
+                else:
+                    bb=binding
+                if set(currentkeys.split(";"))==set(bb.split(";")):
+                    for i in bb.split(";"):
+                        if "KEY_"+i in keys.keys() and "SHIFT" not in i and "CTRL" not in i and "META" not in i and "ALT" not in i:
+                            keys.pop("KEY_"+i)
+                    subprocess.Popen(config[binding],shell=True)
+                else:
+                    continue

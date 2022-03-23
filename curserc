@@ -1,0 +1,5 @@
+{
+	"[0]LEFTSHIFT;LEFTMETA;A": "sakura",
+	"VOLUMEUP": "pactl set-sink-volume 0 +1%",
+	"VOLUMEDOWN": "pactl set-sink-volume 0 -1%"
+}
