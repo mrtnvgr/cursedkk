@@ -1,7 +1,7 @@
 #!/bin/python
 import subprocess, evdev, argparse, json
 
-version = "0.0.3"
+version = "0.0.4"
 parser = argparse.ArgumentParser(description='github.com/mrtnvgr/cursedkk')
 parser.add_argument('-c','--config', help='configuration')
 parser.add_argument('-d','--device', help='input device')
@@ -41,7 +41,7 @@ if args.device!=None and args.config!=None:
                         for i in bb.split(";"):
                             if "KEY_"+i in keys.keys() and "SHIFT" not in i and "CTRL" not in i and "META" not in i and "ALT" not in i:
                                 keys.pop("KEY_"+i)
-                        subprocess.Popen(config[binding],shell=True)
+                        subprocess.Popen(config[binding]+" >/dev/null", shell=True, stdout=subprocess.DEVNULL)
                         break
         except KeyboardInterrupt:
             device.close()
