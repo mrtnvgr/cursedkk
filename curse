@@ -1,7 +1,7 @@
 #!/bin/python
 import subprocess, evdev, argparse, json
 
-version = "0.0.5"
+version = "0.0.6"
 parser = argparse.ArgumentParser(description='github.com/mrtnvgr/cursedkk')
 parser.add_argument('-c','--config', help='configuration')
 parser.add_argument('-d','--device', help='input device')
@@ -23,31 +23,34 @@ if args.device!=None and args.config!=None:
     device = evdev.InputDevice("/dev/input/event"+args.device)
     device.grab()
     ckk = evdev.UInput.from_device(device, name="cursedkk")
-    for event in device.read_loop():
-        hotkey = False
-        if event.type == evdev.ecodes.EV_KEY:
-            key = evdev.categorize(event)
-            if key.keystate!=0:
-                keys[key.keycode] = key.keystate
-            elif key.keystate<1 and key.keycode in keys.keys():
-                keys.pop(key.keycode)
-        if keys!={}:
-            currentkeys = ';'.join(keys).replace("KEY_","")
-            for binding in config:
-                if args.verbose: print(binding+"?"+currentkeys)
-                if binding[:3]=="[0]":
-                    bb=binding[3:]
-                else:
-                    bb=binding
-                if set(currentkeys.split(";"))==set(bb.split(";")):
-                    for i in bb.split(";"):
-                        if "KEY_"+i in keys.keys() and "SHIFT" not in i and "CTRL" not in i and "META" not in i and "ALT" not in i:
-                            keys.pop("KEY_"+i)
-                    hotkey = True
-                    subprocess.Popen(config[binding]+" >/dev/null", shell=True, stdout=subprocess.DEVNULL)
-                    break
-        if hotkey==False:
-            ckk.write(event.type, event.code, event.value)
-            ckk.syn()
-    ckk.close()
-    device.close()
+    try:
+        for event in device.read_loop():
+            hotkey = False
+            if event.type == evdev.ecodes.EV_KEY:
+                key = evdev.categorize(event)
+                if key.keystate!=0:
+                    keys[key.keycode] = key.keystate
+                elif key.keystate<1 and key.keycode in keys.keys():
+                    keys.pop(key.keycode)
+            if keys!={}:
+                currentkeys = ';'.join(keys).replace("KEY_","")
+                for binding in config:
+                    if args.verbose: print(binding+"?"+currentkeys)
+                    if binding[:3]=="[0]":
+                        bb=binding[3:]
+                    else:
+                        bb=binding
+                    if set(currentkeys.split(";"))==set(bb.split(";")):
+                        for i in bb.split(";"):
+                            if "KEY_"+i in keys.keys() and "SHIFT" not in i and "CTRL" not in i and "META" not in i and "ALT" not in i:
+                                keys.pop("KEY_"+i)
+                        hotkey = True
+                        subprocess.Popen(config[binding]+" >/dev/null", shell=True, stdout=subprocess.DEVNULL)
+                        break
+            if hotkey==False:
+                ckk.write(event.type, event.code, event.value)
+                ckk.syn()
+    except (KeyboardInterrupt, SystemExit, OSError):
+        ckk.close()
+        device.ungrab()
+        device.close()
